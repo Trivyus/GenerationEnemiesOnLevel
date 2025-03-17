@@ -4,25 +4,40 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] private float _speed = 3f;
-
-    private Vector3 _direction;
+    [SerializeField] private float _speed = 50f;
 
     public event Action<Enemy> MustBeReleased;
 
-    public void SetDirection(Vector3 direction)
+    private EnemyTarget _target;
+    private Rigidbody _rigidbody;
+
+    private void Awake()
     {
-        _direction = direction.normalized;
+        _rigidbody = GetComponent<Rigidbody>();
     }
 
-    private void OnCollisionEnter(Collision collision)
+    public void SetTarget(EnemyTarget target)
     {
-        if (collision.gameObject.TryGetComponent(out EnemyDestroyer enemyDestroer))
-            MustBeReleased?.Invoke(this);
+        _target = target;
     }
 
     private void Update()
     {
-        transform.Translate(_direction * _speed * Time.deltaTime, Space.World);
+        Move();
+    }
+
+    private void Move()
+    {
+        Vector3 direction = (_target.transform.position - transform.position).normalized;
+
+        _rigidbody.MovePosition(transform.position + _speed * Time.deltaTime * direction);
+
+        transform.LookAt(_target.transform);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.TryGetComponent<EnemyTarget>(out _))
+            MustBeReleased?.Invoke(this);
     }
 }
